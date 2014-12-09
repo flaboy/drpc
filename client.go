@@ -11,10 +11,11 @@ import (
 
 type Client struct {
 	ep *Connection
+	Id string
 }
 
-func NewClient() (c *Client) {
-	c = &Client{}
+func NewClient(id string) (c *Client) {
+	c = &Client{Id: id}
 	c.ep = newConnection()
 	return c
 }
@@ -67,6 +68,8 @@ func (me *Client) Connect(addr string) (err error) {
 
 	me.ep.conn = conn
 	go me.ep.workloop()
+
+	me.ep.Channel().Call("@set_my_id", me.Id)
 
 	fmt.Sprintf("todo: ", use_ssl)
 

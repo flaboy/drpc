@@ -14,10 +14,12 @@ type Server struct {
 }
 
 func NewServer() *Server {
-	return &Server{
+	s := &Server{
 		apiHandlers: make(map[string]ApiHandler),
 		Connections: make(map[string]*Connection),
 	}
+	s.apiHandlers["@set_my_id"] = s.setClientId
+	return s
 }
 
 func (me *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -55,4 +57,9 @@ func (me *Server) onClose(id string) {
 
 func (me *Server) Handle(cmd string, f ApiHandler) {
 	me.apiHandlers[cmd] = f
+}
+
+func (me *Server) setClientId(r *Request) Response {
+	err := r.UnmarshalArgs(&r.Connection.client_id)
+	return Response{Data: true, Err: err}
 }
