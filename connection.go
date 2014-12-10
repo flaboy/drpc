@@ -60,6 +60,7 @@ func (me *Connection) workloop() {
 	for {
 		v := &bag{}
 		_, p, err := me.conn.ReadMessage()
+
 		if err != nil {
 			return
 		}
@@ -106,13 +107,4 @@ func newConnection() *Connection {
 
 func (me *Connection) handle(cmd string, f ApiHandler) {
 	me.apiHandlers[cmd] = f
-}
-
-func (me *Connection) MarshalJSON() ([]byte, error) {
-	v := map[string]interface{}{
-		"client_id":    me.client_id,
-		"remote_addr":  me.RemoteAddr(),
-		"connected_at": me.connectAt.Format("2006/01/02 15:04:05"),
-	}
-	return json.Marshal(v)
 }

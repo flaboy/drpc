@@ -7,19 +7,23 @@ import (
 )
 
 type Server struct {
+	OnConnect func(*Connection)
+	OnClose   func(string)
+
 	apiHandlers map[string]ApiHandler
-	OnConnect   func(*Connection)
-	OnClose     func(string)
-	Connections map[string]*Connection
+	connections map[string]*Connection
 }
 
 func NewServer() *Server {
 	s := &Server{
 		apiHandlers: make(map[string]ApiHandler),
-		Connections: make(map[string]*Connection),
+		connections: make(map[string]*Connection),
 	}
-	s.apiHandlers["@set_my_id"] = s.setClientId
 	return s
+}
+
+func (me *Server) client(id string) *Connection {
+	return me.connections[id]
 }
 
 func (me *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -38,7 +42,7 @@ func (me *Server) wshandler(req *http.Request, ws *websocket.Conn) {
 	ep.conn = ws
 
 	id := ep.Id()
-	me.Connections[id] = ep
+	me.connections[id] = ep
 	defer me.onClose(id)
 
 	if me.OnConnect != nil {
@@ -49,7 +53,7 @@ func (me *Server) wshandler(req *http.Request, ws *websocket.Conn) {
 }
 
 func (me *Server) onClose(id string) {
-	delete(me.Connections, id)
+	delete(me.connections, id)
 	if me.OnClose != nil {
 		me.OnClose(id)
 	}
@@ -57,9 +61,4 @@ func (me *Server) onClose(id string) {
 
 func (me *Server) Handle(cmd string, f ApiHandler) {
 	me.apiHandlers[cmd] = f
-}
-
-func (me *Server) setClientId(r *Request) Response {
-	err := r.UnmarshalArgs(&r.Connection.client_id)
-	return Response{Data: true, Err: err}
 }
