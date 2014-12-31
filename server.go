@@ -7,6 +7,7 @@ import (
 )
 
 type Server struct {
+	stopped   bool
 	OnConnect func(*Connection)
 	OnClose   func(string)
 
@@ -27,6 +28,10 @@ func (me *Server) client(id string) *Connection {
 }
 
 func (me *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if me.stopped {
+		return
+	}
+
 	ws, err := websocket.Upgrade(w, req, nil, 1024, 1024)
 	if err != nil {
 		log.Println("websocket-error:", err)

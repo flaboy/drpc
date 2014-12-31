@@ -2,11 +2,12 @@ package drpc
 
 import (
 	"crypto/tls"
-	"fmt"
 	"github.com/gorilla/websocket"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type Client struct {
@@ -29,7 +30,15 @@ func (me *Client) Channel() *Channel {
 	return me.ep.Channel()
 }
 
-func (me *Client) Connect(addr string) (err error) {
+func (me *Client) Run(addr string) (err error) {
+	for {
+		me.run(addr)
+		time.Sleep(time.Second)
+	}
+	return
+}
+
+func (me *Client) run(addr string) (err error) {
 	var (
 		use_ssl bool
 		u       *url.URL
@@ -40,6 +49,7 @@ func (me *Client) Connect(addr string) (err error) {
 
 	u, err = url.Parse(addr)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -51,9 +61,9 @@ func (me *Client) Connect(addr string) (err error) {
 	case "wss":
 		use_ssl = true
 	}
-
 	c, err = net.Dial("tcp", u.Host)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -64,24 +74,23 @@ func (me *Client) Connect(addr string) (err error) {
 	headers := http.Header{}
 	conn, rsp, err = websocket.NewClient(c, u, headers, 1024, 1024)
 	if err != nil {
-		fmt.Println(rsp)
+		log.Println(err, rsp)
 		return
 	}
 
 	me.ep.conn = conn
-	go func() {
-		defer func() {
-			if me.OnClose != nil {
-				me.OnClose()
-			}
-		}()
-		me.ep.workloop()
+
+	defer func() {
+		if me.OnClose != nil {
+			me.OnClose()
+		}
 	}()
 
 	if me.OnConnect != nil {
-		me.OnConnect()
+		go me.OnConnect()
 	}
 
+	me.ep.workloop()
 	return
 }
 

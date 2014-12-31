@@ -62,11 +62,13 @@ func (me *Connection) workloop() {
 		_, p, err := me.conn.ReadMessage()
 
 		if err != nil {
+			log.Println(err)
 			return
 		}
 		err = json.Unmarshal(p, v)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 		switch v.Act {
 		case actRequest:
@@ -74,6 +76,7 @@ func (me *Connection) workloop() {
 		case actResponse:
 			me.handle_result(v)
 		case actClose:
+			log.Println("closed")
 			return
 		}
 	}
