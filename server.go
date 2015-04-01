@@ -34,7 +34,7 @@ func (me *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	ws, err := websocket.Upgrade(w, req, nil, 1024, 1024)
 	if err != nil {
-		log.Println("websocket-error:", err)
+		log.Println("drpc-error: websocket-upgrade", err)
 		return
 	}
 
