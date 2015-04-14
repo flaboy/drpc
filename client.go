@@ -15,6 +15,7 @@ type Client struct {
 	Id        string
 	OnConnect func()
 	OnClose   func()
+	last_err  string
 }
 
 func NewClient(id string) (c *Client) {
@@ -49,7 +50,7 @@ func (me *Client) run(addr string) (err error) {
 
 	u, err = url.Parse(addr)
 	if err != nil {
-		log.Println(err)
+		me.log(err)
 		return
 	}
 
@@ -63,7 +64,7 @@ func (me *Client) run(addr string) (err error) {
 	}
 	c, err = net.Dial("tcp", u.Host)
 	if err != nil {
-		log.Println(err)
+		me.log(err)
 		return
 	}
 
@@ -74,7 +75,7 @@ func (me *Client) run(addr string) (err error) {
 	headers := http.Header{}
 	conn, rsp, err = websocket.NewClient(c, u, headers, 1024, 1024)
 	if err != nil {
-		log.Println(err, rsp)
+		me.log(err, rsp)
 		return
 	}
 
@@ -92,6 +93,13 @@ func (me *Client) run(addr string) (err error) {
 
 	me.ep.workloop()
 	return
+}
+
+func (me *Client) log(err error, v ...interface{}) {
+	if me.last_err != err.Error() {
+		log.Println(err)
+	}
+	me.last_err = err.Error()
 }
 
 func (me *Client) Handle(cmd string, f ApiHandler) {

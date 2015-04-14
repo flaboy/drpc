@@ -59,7 +59,7 @@ func (me *Response) tobag(req *bag) bag {
 	}
 	b.Data, err = json.Marshal(me.Data)
 	if err != nil {
-		log.Println(err)
+		log.Println("drpc:", err)
 		b.Err = err.Error()
 	}
 	return b
