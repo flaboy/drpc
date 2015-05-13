@@ -15,6 +15,7 @@ type Client struct {
 	Id        string
 	OnConnect func()
 	OnClose   func()
+	Online    bool
 	last_err  string
 }
 
@@ -82,11 +83,13 @@ func (me *Client) run(addr string) (err error) {
 	me.ep.conn = conn
 
 	defer func() {
+		me.Online = false
 		if me.OnClose != nil {
 			me.OnClose()
 		}
 	}()
 
+	me.Online = true
 	if me.OnConnect != nil {
 		go me.OnConnect()
 	}
