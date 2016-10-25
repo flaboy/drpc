@@ -59,12 +59,12 @@ Client
 ```
 func main(){
     c := drpc.NewClient()
+    c.Handle("remote", func_remote)
+        
     err := c.Connect("http://127.0.0.1:8010/api/rpc")
     if err != nil {
         panic(err)
     }
-
-    c.Handle("remote", func_remote)
     ch := c.Channel()
 
     var s string

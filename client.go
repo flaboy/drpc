@@ -32,15 +32,22 @@ func (me *Client) Channel() *Channel {
 	return me.ep.Channel()
 }
 
-func (me *Client) Run(addr string) (err error) {
+func (me *Client) Connect(addr string) (err error) {
+	ch := make(chan error)
+	go me.loop(addr, ch)
+	err = <-ch
+	return err
+}
+
+func (me *Client) loop(addr string, ch chan error) {
 	for {
-		me.run(addr)
+		me.run(addr, ch)
 		time.Sleep(time.Second)
 	}
 	return
 }
 
-func (me *Client) run(addr string) (err error) {
+func (me *Client) run(addr string, ch chan error) {
 	var (
 		use_ssl bool
 		u       *url.URL
@@ -49,8 +56,11 @@ func (me *Client) run(addr string) (err error) {
 		conn    *websocket.Conn
 	)
 
-	u, err = url.Parse(addr)
+	u, err := url.Parse(addr)
 	if err != nil {
+		go func() {
+			ch <- err
+		}()
 		me.log(err)
 		return
 	}
@@ -65,6 +75,9 @@ func (me *Client) run(addr string) (err error) {
 	}
 	c, err = net.Dial("tcp", u.Host)
 	if err != nil {
+		go func() {
+			ch <- err
+		}()
 		me.log(err)
 		return
 	}
@@ -76,6 +89,9 @@ func (me *Client) run(addr string) (err error) {
 	headers := http.Header{}
 	conn, rsp, err = websocket.NewClient(c, u, headers, 1024, 1024)
 	if err != nil {
+		go func() {
+			ch <- err
+		}()
 		me.log(err, rsp)
 		return
 	}
@@ -90,6 +106,9 @@ func (me *Client) run(addr string) (err error) {
 	}()
 
 	me.Online = true
+	go func() {
+		ch <- nil
+	}()
 	if me.OnConnect != nil {
 		go me.OnConnect()
 	}
